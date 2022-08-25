@@ -233,7 +233,10 @@ void PeriodicNeighbourModifier<DIM>::UpdateAtEndOfOutputTimeStep(AbstractCellPop
     
     SimulationTime* p_time = SimulationTime::Instance();
 
-	*locationFile << p_time->GetTime() << "\t";	
+	*locationFile << p_time->GetTime() << "\t";
+
+    double rest_length = 1.0;
+    double spring_stiffness = 20.0;
 
     for (typename AbstractCellPopulation<DIM>::Iterator cell_iter = rCellPopulation.Begin();
         cell_iter != rCellPopulation.End();
@@ -255,6 +258,9 @@ void PeriodicNeighbourModifier<DIM>::UpdateAtEndOfOutputTimeStep(AbstractCellPop
 
         // Loop over containing elements
         std::vector<unsigned> neighbouring_node_indices;
+
+        p_cell->GetCellData()->SetItem("cell_spring_potential", 0.0);
+        double cell_spring_potential = 0.0;
 
         for (typename Node<DIM>::ContainingElementIterator elem_iter = p_node->ContainingElementsBegin();
          elem_iter != p_node->ContainingElementsEnd();
@@ -290,6 +296,9 @@ void PeriodicNeighbourModifier<DIM>::UpdateAtEndOfOutputTimeStep(AbstractCellPop
                         
                         cell_size = cell_size + dist;
 
+                        double overlap = dist - rest_length;
+                        cell_spring_potential = cell_spring_potential + 0.5 * spring_stiffness * overlap*overlap;
+
                         neighbouring_node_indices.push_back(node_index);
                     }
 
@@ -306,7 +315,7 @@ void PeriodicNeighbourModifier<DIM>::UpdateAtEndOfOutputTimeStep(AbstractCellPop
         *locationFile << neigh_number << "\t";
         *locationFile << cell_density << "\t";
 
-        
+        p_cell->GetCellData()->SetItem("cell_spring_potential", cell_spring_potential);
 
     }
 
